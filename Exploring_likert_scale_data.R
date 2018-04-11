@@ -63,9 +63,38 @@ fdat$SUM <- apply(fdat,1,sum)
 
 ##OK, so we can generate pre-and post-test likert data, along with some other vars (randomly generated):
 
+##OK let's try simulating some likert-scale data
+#Consider a survey with 10 questions on a five point likert scale with two latent traits
+set.seed(23)
+latent_1 <- matrix(0,nrow = 100, ncol = 5)
+means <- c(.05,.15,.35,.2,.25)
+for(j in 1:5){
+  latent_1[,j] <-getLikertDat(means,num = 100) 
+}
+set.seed(55)
+latent_2  <- matrix(0,nrow = 100, ncol = 5)
+means <- c(.15,.05,.55,.05,.2)
+for(j in 1:5){
+  latent_2[,j] <-getLikertDat(means,num = 100) 
+}
+
+sim_dat <- data.frame(cbind(latent_1,latent_2))
+
+
+##How to approach with linear regression:
+#try to model the responses linearly
+
+m1 <- lm()
+
+
+
+###Simulation Study: 
+#Survey given before and after intervention is assigned
+
+
 #SPEAKER GROUP
-pre <- c(.05,.15,.35,.2,.25)
-post <- c(0,.1,.4,.3,.2)
+pre <- c(.8,.05,.05,.1,0)
+post <- c(0,.16,.14,.3,.4)
 
 predat <- matrix(0,nrow = 100, ncol = 5)
 for(j in 1:5){
@@ -76,6 +105,39 @@ postdat <- matrix(0,nrow = 100, ncol = 5)
 for(j in 1:5){
   postdat[,j] <-getLikertDat(means,num = 100) 
 }
+
+final_dat <- data.frame(rbind(predat, postdat))
+final_dat$PrePost <- factor(c(rep(0,100),rep(1,100)))
+final_dat$GENDER <- factor(sample(1:2,nrow(df), replace = TRUE))
+head(final_dat)
+
+
+#THE MODEL
+#sum responses
+final_dat$SUM <- apply(final_dat[,1:5],1,sum)
+lm1 <- lm(SUM ~ PrePost + GENDER, data = final_dat)
+summary(lm1)
+
+#Multinomial model
+
+library(nnet) #for multinom function
+
+mfit <- multinom(X1 ~ PrePost + GENDER, data=final_dat)
+summary(mfit) # Not too helpful
+source("http://www.math.montana.edu/shancock/courses/stat539/r/GillenRFunctions.R")
+pander(summ.mfit(mfit))
+
+#here we obtain significant reslults for both variables on certain comparisons
+
+model1 <- 'Religion =~ X + X2
+Politics =~ X3 + X4
+Socioeconomics =~ X5 + X6 + X8
+Geography =~ X7
+Total_Score =~ Religion + Politics + Socioeconomics + Geography'
+
+onyx(model1)
+
+
 
 
 #PAPER GROUP
@@ -113,6 +175,19 @@ mod1 <- lm(DIFF ~ TRT + MEALS + GENDER, data = df)
 summary(mod1)
 
 plot(mod1)
+
+#factor analysis on GAP Data
+pc1 <- prcomp(gap)
+summary(pc1) #this suggests you could get away with a single Principal Component
+plot(pc1$x[,1], pc1$x[,2]) 
+
+#library psych
+library(psych)
+f1 <- factanal(gap,2,rotation = 'varimax')
+
+
+
+
 
 
 
